@@ -1,0 +1,68 @@
+#include <TM1637Display.h>
+
+// Define the connections pins
+#define CLK 3
+#define DIO 2
+#define BTN_INC_MIN 4
+#define BTN_INC_SEC 5
+#define BTN_START_STOP 6
+#define BUZZER 7
+
+TM1637Display display(CLK, DIO);
+
+int countdownTime = 0; // Countdown time in seconds
+bool timerRunning = false;
+
+void setup() {
+  pinMode(BTN_INC_MIN, INPUT_PULLUP);
+  pinMode(BTN_INC_SEC, INPUT_PULLUP);
+  pinMode(BTN_START_STOP, INPUT_PULLUP);
+  pinMode(BUZZER, OUTPUT);
+  display.setBrightness(0x0f); // Set the display to maximum brightness
+}
+
+void loop() {
+  if (digitalRead(BTN_INC_MIN) == LOW) {
+    countdownTime += 60; // Increase by 1 minute
+    tone(BUZZER, 1000, 50); // Play short tone for button press
+    delay(200); // Debounce delay
+  }
+
+  if (digitalRead(BTN_INC_SEC) == LOW) {
+    countdownTime += 1; // Increase by 1 second
+    tone(BUZZER, 1000, 50); // Play short tone for button press
+    delay(200); // Debounce delay
+  }
+
+  if (digitalRead(BTN_START_STOP) == LOW) {
+    timerRunning = !timerRunning; // Toggle timer state
+    tone(BUZZER, 1000, 50); // Play short tone for button press
+    delay(200); // Debounce delay
+  }
+
+  if (timerRunning && countdownTime > 0) {
+    int minutes = countdownTime / 60;
+    int seconds = countdownTime % 60;
+
+    // Display the time in mm:ss format
+    display.showNumberDecEx(minutes * 100 + seconds, 0x40, true);
+
+    delay(1000); // Wait for 1 second
+    countdownTime--;
+
+    if (countdownTime <= 0) {
+      countdownTime = 0; // Stop the countdown at 0
+      timerRunning = false;
+      for (int i = 0; i < 3; i++) { // Beep 3 times when the countdown ends
+        tone(BUZZER, 1000, 500);
+        delay(500);
+      }
+    }
+  } else {
+    int minutes = countdownTime / 60;
+    int seconds = countdownTime % 60;
+
+    // Display the time in mm:ss format
+    display.showNumberDecEx(minutes * 100 + seconds, 0x40, true);
+  }
+}
